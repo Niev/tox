@@ -63,6 +63,10 @@ pub enum Kind {
 }
 
 nom_from_bytes!(Kind, map_opt!(ne_u8, |byte| {
+    // TODO 16 = NUM_RESERVED_PORTS, 256 = NUM_CLIENT_CONNECTIONS = (256 - NUM_RESERVED_PORTS)
+    if byte >= 16 && byte < 240 {
+        return Some(Kind::Data)
+    }
     match byte {
         0 => Some(Kind::RouteRequest),
         1 => Some(Kind::RouteResponse),
