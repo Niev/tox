@@ -19,6 +19,7 @@
 
 //! Functions for binary IO.
 
+use nom::IResult;
 use num_traits::identities::Zero;
 
 /// Serialization into bytes.
@@ -149,3 +150,47 @@ pub fn append_zeros<T: Clone + Zero>(v: &mut Vec<T>, len: usize) {
 pub fn xor_checksum(lhs: &[u8; 2], rhs: &[u8; 2]) -> [u8; 2] {
     [lhs[0] ^ rhs[0], lhs[1] ^ rhs[1]]
 }
+
+// TODO remove this code after merging https://github.com/zetok/tox/pull/51
+
+/// Result type for parsing methods
+pub type NomParseResult<'a, Output> = IResult<&'a [u8], Output>;
+
+/// De-serialization from bytes.
+pub trait NomFromBytes: Sized {
+    /// De-serialize from bytes.
+    fn nom_parse_bytes(bytes: &[u8]) -> NomParseResult<Self>;
+
+    /// De-serialize from bytes, or return `None` if de-serialization failed.
+    /// Note: `Some` is returned even if there are remaining bytes left.
+    fn nom_from_bytes(bytes: &[u8]) -> Option<Self> {
+        match Self::nom_parse_bytes(bytes) {
+            IResult::Done(_, value) => Some(value),
+            IResult::Error(err) => {
+                error!("Can't parse bytes. Error: {:?}", err);
+                None
+            },
+            IResult::Incomplete(_) => None
+        }
+    }
+}
+
+macro_rules! nom_from_bytes (
+    ($name:ident, $submac:ident!( $($args:tt)* )) => (
+        impl NomFromBytes for $name {
+            named!(nom_parse_bytes<&[u8], Self>, $submac!($($args)*));
+        }
+    );
+);
+
+macro_rules! to_bytes (
+    ($name:ident, $result:ident, $self:ident $body:block ) => {
+        impl ToBytes for $name {
+            fn to_bytes(&$self) -> Vec<u8> {
+                let mut $result = Vec::new();
+                $body
+                $result
+            }
+        }
+    }
+);
