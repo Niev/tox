@@ -19,18 +19,15 @@
     along with Tox.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+// FIXME all connection_id from_bytes must be connection_id -16
+// FIXME all connection_id to_bytes must be connection_id +16
+
 use toxcore::crypto_core::*;
 use toxcore::binary_io::*;
 use toxcore::common_parsers::*;
 use nom::*;
 use byteorder::{BigEndian, LittleEndian, WriteBytesExt};
 
-// FIXME all connection_id from_bytes must be connection_id -16
-// FIXME all connection_id to_bytes must be connection_id +16
-
-
-// TODO remove
-nom_from_bytes!(PublicKey, map_opt!(take!(PUBLICKEYBYTES), PublicKey::from_slice));
 
 /** Top-level TCP packet kind names and their associated numbers.
 
